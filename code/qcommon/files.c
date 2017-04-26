@@ -33,6 +33,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "qcommon.h"
 #include "unzip.h"
 
+#ifdef USE_ASSETS_REPLACEMENT
+#include "../client/cl_assets.h"
+#endif
+
 /*
 =============================================================================
 
@@ -302,6 +306,19 @@ FILE*		missingFiles = NULL;
 #  else
 #    define __func__ "(unknown)"
 #  endif
+#endif
+
+#ifdef USE_ASSETS_REPLACEMENT
+typedef struct {
+	char *path;
+	const unsigned long int size;
+	const unsigned char *data;
+} asset_t;
+
+asset_t asset_replacements[] = {
+	{ "gfx/2d/bigchars.tga", con_chars_size, con_chars },
+	{ NULL, 0, NULL }
+};
 #endif
 
 /*
@@ -1118,7 +1135,9 @@ long FS_FOpenFileReadDir(const char *filename, searchpath_t *search, fileHandle_
 	FILE		*filep;
 	int			len;
 	qboolean isLocalConfig, isQVM;
-
+#ifdef USE_ASSETS_REPLACEMENT
+	asset_t         *p;
+#endif
 
 	if(filename == NULL)
 		Com_Error(ERR_FATAL, "FS_FOpenFileRead: NULL 'filename' parameter passed");
@@ -1225,6 +1244,20 @@ long FS_FOpenFileReadDir(const char *filename, searchpath_t *search, fileHandle_
 
 	*file = FS_HandleForFile();
 	fsh[*file].handleFiles.unique = uniqueFILE;
+
+#ifdef USE_ASSETS_REPLACEMENT
+	for (p = asset_replacements; p->path; p++) {
+		if (!Q_stricmp(filename, p->path)) {
+			FILE *asset = tmpfile();
+			fwrite(p->data, sizeof(char), p->size, asset);
+			rewind(asset);
+			fsh[*file].handleFiles.file.o = asset;
+			Q_strncpyz(fsh[*file].name, filename, sizeof(fsh[*file].name));
+			fsh[*file].zipFile = qfalse;
+			return FS_filelength(*file);
+		}
+	}
+#endif
 
 	// is the element a pak file?
 	if(search->pack)

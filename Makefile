@@ -213,6 +213,10 @@ ifndef USE_AUTH
   USE_AUTH=1
 endif
 
+ifndef USE_ASSETS_REPLACEMENT
+  USE_ASSETS_REPLACEMENT=1
+endif
+
 ifndef USE_ALTGAMMA
   # Clearskies - X11-based gamma for Linux
   USE_ALTGAMMA=1
@@ -1023,6 +1027,10 @@ endif
 #Barbatos
 ifeq ($(USE_DEMO_FORMAT_42),1)
   BASE_CFLAGS += -DUSE_DEMO_FORMAT_42=1
+endif
+
+ifeq ($(USE_ASSETS_REPLACEMENT),1)
+  CLIENT_CFLAGS += -DUSE_ASSETS_REPLACEMENT
 endif
 
 ifdef DEFAULT_BASEDIR
